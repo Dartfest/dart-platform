@@ -3,9 +3,157 @@
 <head>
   <meta charset="UTF-8">
   <title>Dart Platform</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background:#f3f4f6;
+      margin:0;
+      padding:0;
+    }
+    .app {
+      max-width: 700px;
+      margin: 30px auto;
+      background:#fff;
+      padding:20px;
+      border-radius:8px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.1);
+    }
+    h1,h2 { margin-top:0; }
+    input, select {
+      padding:8px;
+      margin-right:6px;
+      margin-top:6px;
+    }
+    button {
+      padding:8px 12px;
+      cursor:pointer;
+      margin-top:6px;
+    }
+    ul { padding-left:18px; }
+    li {
+      background:#eee;
+      margin-top:6px;
+      padding:6px;
+      border-radius:4px;
+    }
+    .section { margin-top:24px; }
+  </style>
 </head>
+
 <body>
-  <h1>🎯 Dart Platform</h1>
-  <p>ALS JE DIT ZIET → GITHUB PAGES WERKT ✅</p>
+  <div class="app">
+    <h1>🎯 Dart Platform</h1>
+
+    <!-- Spelers -->
+    <div class="section">
+      <h2>👤 Spelers</h2>
+      <input id="playerInput" placeholder="Spelernaam">
+      <button onclick="addPlayer()">Toevoegen</button>
+      <ul id="playersList"></ul>
+    </div>
+
+    <!-- Teams (dubbels) -->
+    <div class="section">
+      <h2>👥 Teams (dubbels)</h2>
+      <input id="teamNameInput" placeholder="Teamnaam"><br>
+      <select id="teamPlayer1"></select>
+      <select id="teamPlayer2"></select>
+      <button onclick="addTeam()">Team maken</button>
+      <ul id="teamsList"></ul>
+    </div>
+
+    <!-- Wedstrijd -->
+    <div class="section">
+      <h2>📝 Dubbels wedstrijd</h2>
+      <select id="matchTeamA"></select>
+      <select id="matchTeamB"></select>
+      <button onclick="saveMatch()">Team A wint</button>
+      <ul id="matchesList"></ul>
+    </div>
+  </div>
+
+  <script>
+    // ===== DATA =====
+    let players = [];
+    let teams = [];
+    let matches = [];
+
+    // ===== UI UPDATES =====
+    function refreshPlayersUI() {
+      const list = document.getElementById('playersList');
+      list.innerHTML = '';
+      players.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = p;
+        list.appendChild(li);
+      });
+
+      [teamPlayer1, teamPlayer2].forEach(s => {
+        s.innerHTML = '<option value="">Speler</option>';
+        players.forEach(p => {
+          const o = document.createElement('option');
+          o.value = p;
+          o.textContent = p;
+          s.appendChild(o);
+        });
+      });
+    }
+
+    function refreshTeamsUI() {
+      const list = document.getElementById('teamsList');
+      list.innerHTML = '';
+      teams.forEach((t,i) => {
+        const li = document.createElement('li');
+        li.textContent = t.name + ' (' + t.players.join(' & ') + ') – W: ' + t.wins;
+        list.appendChild(li);
+      });
+
+      [matchTeamA, matchTeamB].forEach(s => {
+        s.innerHTML = '<option value="">Team</option>';
+        teams.forEach((t,i) => {
+          const o = document.createElement('option');
+          o.value = i;
+          o.textContent = t.name;
+          s.appendChild(o);
+        });
+      });
+    }
+
+    // ===== ACTIES =====
+    function addPlayer() {
+      const input = document.getElementById('playerInput');
+      if (!input.value) return;
+      players.push(input.value);
+      input.value = '';
+      refreshPlayersUI();
+    }
+
+    function addTeam() {
+      const name = teamNameInput.value;
+      const p1 = teamPlayer1.value;
+      const p2 = teamPlayer2.value;
+      if (!name || !p1 || !p2 || p1 === p2) return;
+      teams.push({ name, players:[p1,p2], wins:0 });
+      teamNameInput.value = '';
+      refreshTeamsUI();
+    }
+
+    function saveMatch() {
+      const a = matchTeamA.value;
+      const b = matchTeamB.value;
+      if (a === '' || b === '' || a === b) return;
+
+      teams[a].wins += 1;
+      matches.push(teams[a].name + ' wint van ' + teams[b].name);
+
+      const li = document.createElement('li');
+      li.textContent = matches[matches.length-1];
+      matchesList.appendChild(li);
+
+      refreshTeamsUI();
+    }
+  </script>
 </body>
 </html>
