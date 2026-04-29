@@ -1,2 +1,42 @@
-<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Dart Platform</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- React -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+    }
+    .app {
+      max-width: 500px;
+      margin: 40px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    input { padding: 8px; width: 70%; }
+    button { padding: 8px 12px; margin-left: 6px; }
+    li { background: #eee; margin-top: 6px; padding: 6px; border-radius: 4px; }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script>
+    const e = React.createElement;
+
+    function DartPlatform() {
+      const [players, setPlayers] = React.useState([]);
+      const [name, setName] = React.useState("");
+
+      return e(
+        'div',
+
