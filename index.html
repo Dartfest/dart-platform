@@ -6,46 +6,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      background:#f3f4f6;
-      margin:0;
-      padding:0;
-    }
-    .app {
-      max-width: 700px;
-      margin: 30px auto;
-      background:#fff;
-      padding:20px;
-      border-radius:8px;
-      box-shadow:0 2px 6px rgba(0,0,0,0.1);
-    }
+    body { font-family: Arial, sans-serif; background:#f3f4f6; margin:0; }
+    .app { max-width:900px; margin:20px auto; background:#fff; padding:20px; border-radius:8px; }
     h1,h2 { margin-top:0; }
-    input, select {
-      padding:8px;
-      margin-right:6px;
-      margin-top:6px;
-    }
-    button {
-      padding:8px 12px;
-      cursor:pointer;
-      margin-top:6px;
-    }
+    input, select { padding:8px; margin:5px 0; }
+    button { padding:8px 12px; margin:5px 0; cursor:pointer; }
     ul { padding-left:18px; }
-    li {
-      background:#eee;
-      margin-top:6px;
-      padding:6px;
-      border-radius:4px;
-    }
-    .section { margin-top:24px; }
+    li { background:#eee; margin-top:5px; padding:6px; border-radius:4px; }
+    .section { margin-top:25px; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
   </style>
 </head>
 
 <body>
-  <div class="app">
-    <h1>🎯 Dart Platform</h1>
+<div class="app">
+  <h1>🎯 Dart Platform</h1>
 
+  <div class="grid">
     <!-- Spelers -->
     <div class="section">
       <h2>👤 Spelers</h2>
@@ -54,106 +31,134 @@
       <ul id="playersList"></ul>
     </div>
 
-    <!-- Teams (dubbels) -->
+    <!-- Ranking -->
     <div class="section">
-      <h2>👥 Teams (dubbels)</h2>
-      <input id="teamNameInput" placeholder="Teamnaam"><br>
-      <select id="teamPlayer1"></select>
-      <select id="teamPlayer2"></select>
-      <button onclick="addTeam()">Team maken</button>
-      <ul id="teamsList"></ul>
-    </div>
-
-    <!-- Wedstrijd -->
-    <div class="section">
-      <h2>📝 Dubbels wedstrijd</h2>
-      <select id="matchTeamA"></select>
-      <select id="matchTeamB"></select>
-      <button onclick="saveMatch()">Team A wint</button>
-      <ul id="matchesList"></ul>
+      <h2>🏆 Ranking</h2>
+      <ul id="rankingList"></ul>
     </div>
   </div>
 
-  <script>
-    // ===== DATA =====
-    let players = [];
-    let teams = [];
-    let matches = [];
+  <!-- Teams -->
+  <div class="section">
+    <h2>👥 Teams (dubbels)</h2>
+    <input id="teamName" placeholder="Teamnaam"><br>
+    <select id="teamP1"></select>
+    <select id="teamP2"></select>
+    <button onclick="addTeam()">Team maken</button>
+    <ul id="teamsList"></ul>
+  </div>
 
-    // ===== UI UPDATES =====
-    function refreshPlayersUI() {
-      const list = document.getElementById('playersList');
-      list.innerHTML = '';
-      players.forEach(p => {
-        const li = document.createElement('li');
-        li.textContent = p;
-        list.appendChild(li);
-      });
+  <!-- Team match -->
+  <div class="section">
+    <h2>📝 Dubbels wedstrijd</h2>
+    <select id="teamA"></select>
+    <select id="teamB"></select>
+    <button onclick="teamMatch()">Team A wint</button>
+  </div>
 
-      [teamPlayer1, teamPlayer2].forEach(s => {
-        s.innerHTML = '<option value="">Speler</option>';
-        players.forEach(p => {
-          const o = document.createElement('option');
-          o.value = p;
-          o.textContent = p;
-          s.appendChild(o);
-        });
-      });
-    }
+  <!-- 501 vs AI -->
+  <div class="section">
+    <h2>🎯 Single 501 vs AI</h2>
+    <select id="singlePlayer"></select>
+    <select id="ai">
+      <option value="easy">AI Easy</option>
+      <option value="normal">AI Normal</option>
+      <option value="hard">AI Hard</option>
+    </select>
+    <button onclick="start501()">Start 501</button>
+    <p id="game"></p>
+    <button onclick="throw501()">Gooi beurt</button>
+  </div>
+</div>
 
-    function refreshTeamsUI() {
-      const list = document.getElementById('teamsList');
-      list.innerHTML = '';
-      teams.forEach((t,i) => {
-        const li = document.createElement('li');
-        li.textContent = t.name + ' (' + t.players.join(' & ') + ') – W: ' + t.wins;
-        list.appendChild(li);
-      });
+<script>
+const store = s => JSON.parse(localStorage.getItem(s) || "null");
+const save = (k,v) => localStorage.setItem(k, JSON.stringify(v));
 
-      [matchTeamA, matchTeamB].forEach(s => {
-        s.innerHTML = '<option value="">Team</option>';
-        teams.forEach((t,i) => {
-          const o = document.createElement('option');
-          o.value = i;
-          o.textContent = t.name;
-          s.appendChild(o);
-        });
-      });
-    }
+let players = store("players") || [];
+let stats = store("stats") || {};
+let teams = store("teams") || [];
+let game = store("game") || null;
 
-    // ===== ACTIES =====
-    function addPlayer() {
-      const input = document.getElementById('playerInput');
-      if (!input.value) return;
-      players.push(input.value);
-      input.value = '';
-      refreshPlayersUI();
-    }
+function render(){
+  playersList.innerHTML="";
+  players.forEach(p=>{
+    playersList.innerHTML+=`<li>${p}</li>`;
+    if(!stats[p]) stats[p]={w:0,l:0};
+  });
 
-    function addTeam() {
-      const name = teamNameInput.value;
-      const p1 = teamPlayer1.value;
-      const p2 = teamPlayer2.value;
-      if (!name || !p1 || !p2 || p1 === p2) return;
-      teams.push({ name, players:[p1,p2], wins:0 });
-      teamNameInput.value = '';
-      refreshTeamsUI();
-    }
+  rankingList.innerHTML="";
+  Object.entries(stats)
+    .sort((a,b)=>b[1].w-a[1].w)
+    .forEach(([n,s])=>rankingList.innerHTML+=`<li>${n} (W:${s.w} L:${s.l})</li>`);
 
-    function saveMatch() {
-      const a = matchTeamA.value;
-      const b = matchTeamB.value;
-      if (a === '' || b === '' || a === b) return;
+  [teamP1,teamP2,singlePlayer].forEach(s=>{
+    s.innerHTML="<option value=''>Kies speler</option>";
+    players.forEach(p=>s.innerHTML+=`<option>${p}</option>`);
+  });
 
-      teams[a].wins += 1;
-      matches.push(teams[a].name + ' wint van ' + teams[b].name);
+  teamsList.innerHTML="";
+  teams.forEach((t,i)=>teamsList.innerHTML+=`<li>${t.name} (${t.p.join(" & ")}) W:${t.w}</li>`);
 
-      const li = document.createElement('li');
-      li.textContent = matches[matches.length-1];
-      matchesList.appendChild(li);
+  [teamA,teamB].forEach(s=>{
+    s.innerHTML="<option value=''>Kies team</option>";
+    teams.forEach((t,i)=>s.innerHTML+=`<option value='${i}'>${t.name}</option>`);
+  });
 
-      refreshTeamsUI();
-    }
-  </script>
+  gameText();
+}
+
+function addPlayer(){
+  if(!playerInput.value) return;
+  players.push(playerInput.value);
+  playerInput.value="";
+  save("players",players); save("stats",stats);
+  render();
+}
+
+function addTeam(){
+  if(!teamName.value||!teamP1.value||!teamP2.value||teamP1.value===teamP2.value) return;
+  teams.push({name:teamName.value,p:[teamP1.value,teamP2.value],w:0});
+  teamName.value="";
+  save("teams",teams);
+  render();
+}
+
+function teamMatch(){
+  if(teamA.value===""||teamB.value===""||teamA.value===teamB.value) return;
+  teams[teamA.value].w++;
+  save("teams",teams);
+  render();
+}
+
+function start501(){
+  if(!singlePlayer.value) return;
+  game={p:singlePlayer.value, ai:ai.value, pr:501, ar:501};
+  save("game",game);
+  gameText();
+}
+
+function throw501(){
+  if(!game) return;
+  const aiPower = game.ai==="easy"?30:game.ai==="normal"?50:70;
+  game.pr-=Math.floor(Math.random()*60)+1;
+  game.ar-=Math.floor(Math.random()*aiPower)+1;
+
+  if(game.pr<=0||game.ar<=0){
+    if(game.pr<=0) stats[game.p].w++;
+    else stats[game.p].l++;
+    game=null;
+  }
+  save("game",game); save("stats",stats);
+  render();
+}
+
+function gameText(){
+  gameEl=document.getElementById("game");
+  gameEl.textContent=game?`${game.p}:${game.pr} | AI:${game.ar}`:"Geen lopende wedstrijd";
+}
+
+render();
+</script>
 </body>
 </html>
